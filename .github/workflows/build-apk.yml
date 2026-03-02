@@ -29,10 +29,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.5 # En caso de que no haya wrapper configurado
+          gradle-version: 8.5
+          cache-disabled: true # Desactivamos la caché porque GitHub está fallando
 
       - name: Build Debug APK
-        run: gradle assembleDebug
+        run: gradle assembleDebug --no-daemon # Evita el daemon que a veces falla en la nube
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
