@@ -16,7 +16,7 @@ class FinanceRepository(private val financeDao: FinanceDao, private val context:
 
     fun getUserSalary(): Flow<Double> {
         return context.dataStore.data.map { preferences ->
-            preferences[SALARY_KEY] ?: 1850000.0 // Valor por defecto para pruebas
+            preferences[SALARY_KEY] ?: 0.0
         }
     }
 
@@ -26,18 +26,39 @@ class FinanceRepository(private val financeDao: FinanceDao, private val context:
         }
     }
 
-    fun getFixedExpenses(): Flow<List<FixedExpense>> {
-        return financeDao.getFixedExpenses()
-    }
+    fun getFixedExpenses(): Flow<List<FixedExpense>> = financeDao.getFixedExpenses()
 
     fun getMonthlyExpenses(): Flow<List<Transaction>> {
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.DAY_OF_MONTH, 1)
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        val startOfMonth = calendar.timeInMillis
-        return financeDao.getMonthlyTransactions(TransactionType.EXPENSE, startOfMonth)
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.DAY_OF_MONTH, 1)
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        return financeDao.getMonthlyTransactions(TransactionType.EXPENSE, cal.timeInMillis)
     }
+
+    fun getMonthlyIncomes(): Flow<List<Transaction>> {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.DAY_OF_MONTH, 1)
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        return financeDao.getMonthlyTransactions(TransactionType.INCOME, cal.timeInMillis)
+    }
+
+    fun getCategories(type: TransactionType) = financeDao.getCategories(type)
+    
+    fun getPaymentMethods() = financeDao.getPaymentMethods()
+
+    suspend fun addTransaction(transaction: Transaction) = financeDao.insertTransaction(transaction)
+    
+    suspend fun addPaymentMethod(method: PaymentMethod): Long = financeDao.insertPaymentMethod(method)
+    
+    suspend fun addCategory(category: Category): Long = financeDao.insertCategory(category)
+    
+    suspend fun addFixedExpense(expense: FixedExpense) = financeDao.insertFixedExpense(expense)
+    
+    suspend fun deleteFixedExpense(id: Int) = financeDao.deleteFixedExpense(id)
+    
+    suspend fun updateFixedExpenseStatus(id: Int, paid: Boolean) = financeDao.updateFixedExpensePaidStatus(id, paid)
 }

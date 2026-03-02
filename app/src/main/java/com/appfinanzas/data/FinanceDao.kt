@@ -11,15 +11,27 @@ interface FinanceDao {
     @Query("SELECT * FROM transactions WHERE type = :type AND date >= :startDate")
     fun getMonthlyTransactions(type: TransactionType, startDate: Long): Flow<List<Transaction>>
 
+    @Query("SELECT * FROM categories WHERE type = :type")
+    fun getCategories(type: TransactionType): Flow<List<Category>>
+
+    @Query("SELECT * FROM payment_methods")
+    fun getPaymentMethods(): Flow<List<PaymentMethod>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: Transaction)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPaymentMethod(method: PaymentMethod)
+    suspend fun insertPaymentMethod(method: PaymentMethod): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCategory(category: Category)
+    suspend fun insertCategory(category: Category): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFixedExpense(expense: FixedExpense)
+
+    @Query("DELETE FROM fixed_expenses WHERE id = :id")
+    suspend fun deleteFixedExpense(id: Int)
+
+    @Query("UPDATE fixed_expenses SET isPaidThisMonth = :paid WHERE id = :id")
+    suspend fun updateFixedExpensePaidStatus(id: Int, paid: Boolean)
 }
