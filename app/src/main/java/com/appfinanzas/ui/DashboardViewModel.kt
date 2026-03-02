@@ -55,6 +55,9 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
         DashboardState(
             salary = sal,
             totalFixedExpenses = totalFixed,
+            unpaidFixedExpenses = unpaidFixed,
+            totalExpenses = totalExp,
+            totalIncomes = totalInc,
             realAvailable = realAvailable,
             showWarning = unpaidFixed > 0 && totalFixed > 0,
             hasPaidItems = fixed.isNotEmpty() && fixed.all { it.isPaidThisMonth }
@@ -90,7 +93,10 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
 
 data class DashboardState(
     val salary: Double = 0.0, 
-    val totalFixedExpenses: Double = 0.0, 
+    val totalFixedExpenses: Double = 0.0,
+    val unpaidFixedExpenses: Double = 0.0,
+    val totalExpenses: Double = 0.0,
+    val totalIncomes: Double = 0.0,
     val realAvailable: Double = 0.0, 
     val showWarning: Boolean = false, 
     val hasPaidItems: Boolean = false
