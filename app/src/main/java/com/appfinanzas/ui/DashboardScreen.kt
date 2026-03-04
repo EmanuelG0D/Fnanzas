@@ -359,18 +359,7 @@ fun StatBubble(title: String, amount: Double, icon: ImageVector, color: Color, b
 }
 
 @Composable
-fun WarningAlert(salary: Double, fixedExpenses: Double, realAvailable: Double) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)), // Ámbar muy claro
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.NotificationsActive, contentDescription = null, tint = Color(0xFFD97706))
-                Spacer(modifier = Modifier.width(12.dp))
-    FixedExpensesCard(total: Double, unpaid: Double, onClick: () -> Unit) {
+fun FixedExpensesCard(total: Double, unpaid: Double, onClick: () -> Unit) {
     val paid = total - unpaid
     val progress = if (total > 0) (paid / total).toFloat() else 0f
     
@@ -421,7 +410,18 @@ fun WarningAlert(salary: Double, fixedExpenses: Double, realAvailable: Double) {
 }
 
 @Composable
-fun             Text(
+fun WarningAlert(salary: Double, fixedExpenses: Double, realAvailable: Double) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)), // Ámbar muy claro
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.NotificationsActive, contentDescription = null, tint = Color(0xFFD97706))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
                     text = "Atención: Gastos Fijos Pendientes",
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF92400E)
