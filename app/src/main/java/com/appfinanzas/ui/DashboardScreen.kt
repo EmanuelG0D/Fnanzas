@@ -132,9 +132,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
 
             // Alerta Dinámica Coloquial
             if (state.unpaidFixedExpenses > 0 && state.totalFixedExpenses > 0) {
-                WarningAlert(state.salary, state.totalFixedExpenses)
+                WarningAlert(state.salary, state.totalFixedExpenses, state.realAvailable)
             } else if (state.totalFixedExpenses > 0) {
-                SuccessAlert()
+                SuccessAlert(state.realAvailable)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -344,21 +344,28 @@ fun StatBubble(title: String, amount: Double, icon: ImageVector, color: Color, b
 }
 
 @Composable
-fun WarningAlert(salary: Double, fixedExpenses: Double) {
+fun WarningAlert(salary: Double, fixedExpenses: Double, realAvailable: Double) {
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)), // Ámbar muy claro
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(modifier = Modifier.padding(16.dp)) {
-            Icon(Icons.Rounded.NotificationsActive, contentDescription = null, tint = Color(0xFFD97706))
-            Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.NotificationsActive, contentDescription = null, tint = Color(0xFFD97706))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Atención: Gastos Fijos Pendientes",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF92400E)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Bueno parce, usted gana ${formatMoney(salary)} pero debe pagar ${formatMoney(fixedExpenses)}, así que no se gaste la plata hasta pagar primero.",
+                text = "Tienes obligaciones pendientes por ${formatMoney(fixedExpenses)}. Si pagas todo ahora, tu saldo real disponible sería de ${formatMoney(realAvailable)}.",
                 color = Color(0xFF92400E),
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
                 lineHeight = 20.sp
             )
         }
@@ -366,21 +373,28 @@ fun WarningAlert(salary: Double, fixedExpenses: Double) {
 }
 
 @Composable
-fun SuccessAlert() {
+fun SuccessAlert(realAvailable: Double) {
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0)),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.VerifiedUser, contentDescription = null, tint = Color(0xFF059669))
-            Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.VerifiedUser, contentDescription = null, tint = Color(0xFF059669))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "¡Al día con tus obligaciones!",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF065F46)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "¡Excelente parce! Ya pagó todos los gastos fijos del mes. De aquí en adelante lo que gaste es plata libre.",
+                text = "Has cubierto todos tus gastos fijos. Tu saldo real disponible para otros gastos o ahorro es de ${formatMoney(realAvailable)}.",
                 color = Color(0xFF065F46),
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
                 lineHeight = 20.sp
             )
         }

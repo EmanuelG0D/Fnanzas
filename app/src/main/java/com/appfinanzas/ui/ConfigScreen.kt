@@ -52,6 +52,11 @@ fun ConfigScreen(viewModel: DashboardViewModel, navController: NavController) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
                     }
+                },
+                actions = {
+                    TextButton(onClick = { navController.navigate("categories") }) {
+                        Text("Categorías", fontWeight = FontWeight.Bold)
+                    }
                 }
             )
         },

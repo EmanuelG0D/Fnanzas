@@ -138,6 +138,10 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
         return repository.addCategory(Category(name = name, type = type, isCustom = true)).toInt()
     }
 
+    fun deleteCategory(category: Category) = viewModelScope.launch { repository.deleteCategory(category) }
+    
+    fun updateCategory(category: Category) = viewModelScope.launch { repository.updateCategory(category) }
+
     suspend fun addCustomMethod(name: String): Int {
         return repository.addPaymentMethod(PaymentMethod(name = name, isCustom = true)).toInt()
     }

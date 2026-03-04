@@ -56,6 +56,10 @@ class FinanceRepository(private val financeDao: FinanceDao, private val context:
     
     suspend fun addCategory(category: Category): Long = financeDao.insertCategory(category)
     
+    suspend fun deleteCategory(category: Category) = financeDao.deleteCategory(category)
+    
+    suspend fun updateCategory(category: Category) = financeDao.updateCategory(category)
+
     suspend fun addFixedExpense(expense: FixedExpense) = financeDao.insertFixedExpense(expense)
     
     suspend fun deleteFixedExpense(id: Int) = financeDao.deleteFixedExpense(id)

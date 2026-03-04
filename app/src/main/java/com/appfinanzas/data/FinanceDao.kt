@@ -26,6 +26,12 @@ interface FinanceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: Category): Long
 
+    @Delete
+    suspend fun deleteCategory(category: Category)
+
+    @Update
+    suspend fun updateCategory(category: Category)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFixedExpense(expense: FixedExpense)
 
