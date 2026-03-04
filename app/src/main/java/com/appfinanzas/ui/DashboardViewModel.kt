@@ -44,8 +44,11 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
     val incomeCats = repository.getCategories(TransactionType.INCOME).stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val dashboardState = combine(
-        salaryFlow, fixedExpenses, expenses, incomes, expenseCats, incomeCats, paymentMethods
-    ) { sal, fixed, exp, inc, eCats, iCats, methods ->
+        salaryFlow, fixedExpenses, expenses, incomes,
+        combine(expenseCats, incomeCats, paymentMethods) { e, i, p -> Triple(e, i, p) }
+    ) { sal, fixed, exp, inc, auxData ->
+        val (eCats, iCats, methods) = auxData
+        
         val totalFixed = fixed.sumOf { it.amount }
         val totalExp = exp.sumOf { it.amount }
         val totalInc = inc.sumOf { it.amount }

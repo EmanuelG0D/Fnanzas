@@ -21,9 +21,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.navigation.NavController
 import com.appfinanzas.data.TransactionType
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
