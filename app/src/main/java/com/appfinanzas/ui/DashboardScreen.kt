@@ -1,6 +1,9 @@
 package com.appfinanzas.ui
 
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.*
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +47,22 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
             TopAppBar(
                 title = { Text("Mi Billetera", fontWeight = FontWeight.Bold) },
                 actions = {
+                    val context = LocalContext.current
+                    val scope = rememberCoroutineScope()
+                    IconButton(onClick = { 
+                        scope.launch {
+                            val csvReport = viewModel.generateReport()
+                            val sendIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, csvReport)
+                                type = "text/plain" 
+                            }
+                            val shareIntent = Intent.createChooser(sendIntent, "Exportar Reporte")
+                            context.startActivity(shareIntent)
+                        }
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "Reporte")
+                    }
                     IconButton(onClick = { navController.navigate("config") }) {
                         Icon(Icons.Default.Settings, contentDescription = "Configuración")
                     }
@@ -181,7 +200,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                 // Solo mostramos las primeras 5 en el dashboard
                 state.recentTransactions.take(5).forEach { transaction ->
                     // Usamos SwipeToDismiss o un botón simple de eliminar
-                    TransactionItem(transaction, onDelete = { viewModel.deleteTransaction(transaction.id) })
+                    TransactionItem(
+                        transaction, 
+                        onDelete = { viewModel.deleteTransaction(transaction.id) },
+                        onEdit = {
+                            val typeStr = if (transaction.type == TransactionType.INCOME) "INCOME" else "EXPENSE"
+                            navController.navigate("transaction/$typeStr?txId=${transaction.id}&amount=${transaction.amount.toFloat()}&catId=${transaction.categoryId}&payId=${transaction.payMethodId}&desc=${java.net.URLEncoder.encode(transaction.description ?: "", "UTF-8")}&date=${transaction.date}")
+                        }
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 

@@ -1,6 +1,7 @@
 package com.appfinanzas.ui
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -10,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,7 +51,7 @@ fun TransactionScreen(
     val mainColor = if (isExpense) Color(0xFFEF4444) else Color(0xFF10B981)
 
     // Inicializar estados con datos de edición si existen
-    var amount by remember { mutableStateOf(editData?.amount?.toLong()?.toString() ?: "") }
+    var amount by remember { mutableStateOf(editData?.amount?.toString()?.removeSuffix(".0") ?: "") }
     var description by remember { mutableStateOf(editData?.desc ?: "") }
     var selectedCatId by remember { mutableStateOf<Int?>(editData?.catId?.takeIf { it != -1 }) }
     var selectedMethodId by remember { mutableStateOf<Int?>(editData?.payId?.takeIf { it != -1 }) }

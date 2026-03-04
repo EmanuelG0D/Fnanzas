@@ -28,6 +28,8 @@ import com.appfinanzas.data.FixedExpense
 import com.appfinanzas.data.TransactionType
 
 @OptIn(ExperimentalMaterial3Api::class)
+import java.net.URLEncoder
+
 @Composable
 fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, type: HistoryType) {
     val state by viewModel.dashboardState.collectAsState()
@@ -91,7 +93,14 @@ fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, t
                 } else {
                     LazyColumn(contentPadding = PaddingValues(16.dp)) {
                         items(transactionsList) { t ->
-                            TransactionItem(t, onDelete = { viewModel.deleteTransaction(t.id) })
+                            TransactionItem(
+                                t, 
+                                onDelete = { viewModel.deleteTransaction(t.id) },
+                                onEdit = {
+                                    val typeStr = if (t.type == TransactionType.INCOME) "INCOME" else "EXPENSE"
+                                    navController.navigate("transaction/$typeStr?txId=${t.id}&amount=${t.amount.toFloat()}&catId=${t.categoryId}&payId=${t.payMethodId}&desc=${java.net.URLEncoder.encode(t.description ?: "", "UTF-8")}&date=${t.date}")
+                                }
+                            )
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
