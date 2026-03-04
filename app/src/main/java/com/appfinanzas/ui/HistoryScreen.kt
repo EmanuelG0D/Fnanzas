@@ -27,9 +27,9 @@ import androidx.navigation.NavController
 import com.appfinanzas.data.FixedExpense
 import com.appfinanzas.data.TransactionType
 
-@OptIn(ExperimentalMaterial3Api::class)
 import java.net.URLEncoder
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, type: HistoryType) {
     val state by viewModel.dashboardState.collectAsState()
