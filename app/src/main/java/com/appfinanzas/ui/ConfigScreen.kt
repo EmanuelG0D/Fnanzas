@@ -8,7 +8,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -138,8 +139,21 @@ fun ConfigScreen(viewModel: DashboardViewModel, navController: NavController) {
                 }
             }
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(fixedExpenses) { expense ->
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {                item {
+                    // Botón de reinicio manual
+                     if (fixedExpenses.any { it.isPaidThisMonth }) {
+                        OutlinedButton(
+                            onClick = { viewModel.resetMonthlyPayments() },
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(Icons.Rounded.Refresh, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Reiniciar Mes (Marcar todo como no pagado)")
+                        }
+                    }
+                }
+                                items(fixedExpenses) { expense ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

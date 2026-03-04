@@ -144,9 +144,11 @@ fun FixedExpenseItem(expense: FixedExpense, viewModel: DashboardViewModel) {
                     color = Color(0xFF1E293B)
                 )
                 
-                // Mostrar cuotas si existen
+                // Mostrar cuotas con detalle mas claro
                 val subtitle = if (expense.totalInstallments > 0) {
-                    "${expense.paidInstallments} de ${expense.totalInstallments} pagadas"
+                    val current = if (expense.isPaidThisMonth) expense.paidInstallments else expense.paidInstallments + 1
+                    val statusText = if (expense.isPaidThisMonth) "pagada" else "pendiente"
+                    "Cuota $current de ${expense.totalInstallments} ($statusText)"
                 } else {
                     "Pago mensual recurrente"
                 }
@@ -154,7 +156,7 @@ fun FixedExpenseItem(expense: FixedExpense, viewModel: DashboardViewModel) {
                 Text(
                     text = subtitle,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = if (expense.isPaidThisMonth && expense.totalInstallments > 0) Color(0xFF10B981) else Color.Gray
                 )
             }
             

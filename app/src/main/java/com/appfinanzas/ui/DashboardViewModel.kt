@@ -105,20 +105,33 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
         if (expense.totalInstallments > 0) {
             // Manejo de cuotas
             if (paid) {
-                val newCount = expense.paidInstallments + 1
-                if (newCount >= expense.totalInstallments) {
-                    repository.deleteFixedExpense(id)
-                } else {
-                    repository.updateFixedExpenseInstallment(id, true, newCount)
+                // Solo avanzamos si no está pagado ya este mes para evitar doble click accidental
+                if (!expense.isPaidThisMonth) {
+                    val newCount = expense.paidInstallments + 1
+                    if (newCount >= expense.totalInstallments) {
+                        repository.deleteFixedExpense(id)
+                    } else {
+                        repository.updateFixedExpenseInstallment(id, true, newCount)
+                    }
                 }
             } else {
-                // Deshacer pago (restar cuota solo si es mayor a 0)
-                val newCount = if (expense.paidInstallments > 0) expense.paidInstallments - 1 else 0
-                repository.updateFixedExpenseInstallment(id, false, newCount)
+                // Deshacer pago (restar cuota solo si es mayor a 0 y estaba pagado)
+                if (expense.isPaidThisMonth) {
+                    val newCount = if (expense.paidInstallments > 0) expense.paidInstallments - 1 else 0
+                    repository.updateFixedExpenseInstallment(id, false, newCount)
+                }
             }
         } else {
             // Gasto normal recurrente
             repository.updateFixedExpenseStatus(id, paid) 
+        }
+    }
+    
+    fun resetMonthlyPayments() = viewModelScope.launch {
+        // Marca todos los gastos FIJOS como NO pagados para iniciar mes
+        // (Nota: No afecta el conteo de cuotas, solo el check del mes actual)
+        fixedExpenses.value.forEach { 
+             repository.updateFixedExpenseStatus(it.id, false)
         }
     }
     

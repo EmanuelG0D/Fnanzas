@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -115,24 +116,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                StatBubble(
-                    title = "Fijos Totales",
-                    amount = state.totalFixedExpenses,
-                    icon = Icons.Rounded.AccountBalanceWallet,
-                    color = Color(0xFF3B82F6),
-                    bgColor = Color(0xFFDBEAFE),
-                    modifier = Modifier.weight(1f).clickable { navController.navigate("history/FIXED") }
-                )
-                StatBubble(
-                    title = "Fijos a Pagar",
-                    amount = state.unpaidFixedExpenses,
-                    icon = Icons.Rounded.Schedule,
-                    color = Color(0xFFF59E0B), // Naranja
-                    bgColor = Color(0xFFFEF3C7), // Naranja claro
-                    modifier = Modifier.weight(1f).clickable { navController.navigate("history/FIXED") }
-                )
-            }
+            
+            // Sección de Gastos Fijos con Barra de Progreso
+            FixedExpensesCard(
+                total = state.totalFixedExpenses,
+                unpaid = state.unpaidFixedExpenses,
+                onClick = { navController.navigate("history/FIXED") }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -380,7 +370,58 @@ fun WarningAlert(salary: Double, fixedExpenses: Double, realAvailable: Double) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.NotificationsActive, contentDescription = null, tint = Color(0xFFD97706))
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(
+    FixedExpensesCard(total: Double, unpaid: Double, onClick: () -> Unit) {
+    val paid = total - unpaid
+    val progress = if (total > 0) (paid / total).toFloat() else 0f
+    
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFDBEAFE)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF3B82F6))
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Gastos Fijos", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.Gray)
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                color = if (progress >= 1f) Color(0xFF10B981) else Color(0xFF3B82F6),
+                trackColor = Color(0xFFF1F5F9),
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Pagado", fontSize = 12.sp, color = Color.Gray)
+                    Text(formatMoney(paid), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF10B981))
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Total", fontSize = 12.sp, color = Color.Gray)
+                    Text(formatMoney(total), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun             Text(
                     text = "Atención: Gastos Fijos Pendientes",
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF92400E)

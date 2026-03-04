@@ -7,9 +7,9 @@
     <application
         android:name=".FinanceApp"
         android:allowBackup="true"
-        android:icon="@drawable/ic_add"
+        android:icon="@mipmap/ic_launcher"
         android:label="AppFinanzas"
-        android:roundIcon="@drawable/ic_add"
+        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppFinanzas">
         <activity
@@ -21,17 +21,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".ui.QuickAddTileService"
-            android:exported="true"
-            android:icon="@drawable/ic_add"
-            android:label="Añadir Gasto"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
     </application>
 
 </manifest>
