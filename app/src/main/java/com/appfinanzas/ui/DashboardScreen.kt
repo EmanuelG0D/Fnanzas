@@ -302,7 +302,11 @@ fun MainBalanceCard(amount: Double) {
             )
             
             Column(
-                modifier = ModifieDisponible", 
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 36.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Plata Disponible", 
                     fontSize = 16.sp, 
                     color = Color.White.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Medium
@@ -327,11 +331,7 @@ fun MainBalanceCard(amount: Double) {
                         color = if (targetAmount < 0) Color(0xFFFF5252) else Color.White,
                         letterSpacing = (-1).sp
                     )
-                }   fontSize = 40.sp,
-                    fontWeight = FontWeight.Black,
-                    color = if (amount < 0) Color(0xFFFF5252) else Color.White,
-                    letterSpacing = (-1).sp
-                )
+                }
             }
         }
     }
