@@ -46,6 +46,26 @@ fun ConfigScreen(viewModel: DashboardViewModel, navController: NavController) {
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllDialog = false },
+            title = { Text("¿Estás seguro?") },
+            text = { Text("Esto borrará TODOS tus datos, gastos e ingresos. No se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = { 
+                     viewModel.deleteAllData()
+                     showDeleteAllDialog = false
+                }) {
+                    Text("BORRAR TODO", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -192,6 +212,23 @@ fun ConfigScreen(viewModel: DashboardViewModel, navController: NavController) {
                             }
                         }
                     }
+                }
+                
+                item {
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Text("Zona Peligrosa", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    OutlinedButton(
+                        onClick = { showDeleteAllDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Borrar toda la información")
+                    }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }

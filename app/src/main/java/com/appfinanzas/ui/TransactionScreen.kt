@@ -26,27 +26,56 @@ import androidx.navigation.NavController
 import com.appfinanzas.data.TransactionType
 import kotlinx.coroutines.launch
 
+import android.app.DatePickerDialog
+import android.widget.DatePicker
+import java.util.Calendar
+import java.util.Date
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionScreen(viewModel: DashboardViewModel, navController: NavController, type: TransactionType) {
+fun TransactionScreen(
+    viewModel: DashboardViewModel, 
+    navController: NavController, 
+    type: TransactionType,
+    editData: EditTransactionData? = null
+) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val isExpense = type == TransactionType.EXPENSE
-    val titleStr = if (isExpense) "Registrar Gasto" else "Registrar Ingreso"
+    val isEdit = editData != null
+    val titleStr = if (isEdit) "Editar Movimiento" else if (isExpense) "Registrar Gasto" else "Registrar Ingreso"
     val mainColor = if (isExpense) Color(0xFFEF4444) else Color(0xFF10B981)
 
-    var amount by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedCatId by remember { mutableStateOf<Int?>(null) }
-    var selectedMethodId by remember { mutableStateOf<Int?>(null) }
+    // Inicializar estados con datos de edición si existen
+    var amount by remember { mutableStateOf(editData?.amount?.toLong()?.toString() ?: "") }
+    var description by remember { mutableStateOf(editData?.desc ?: "") }
+    var selectedCatId by remember { mutableStateOf<Int?>(editData?.catId?.takeIf { it != -1 }) }
+    var selectedMethodId by remember { mutableStateOf<Int?>(editData?.payId?.takeIf { it != -1 }) }
+    var selectedDate by remember { mutableStateOf(editData?.date ?: System.currentTimeMillis()) }
 
     val categories by (if (isExpense) viewModel.expenseCats else viewModel.incomeCats).collectAsState()
     val methods by viewModel.paymentMethods.collectAsState()
 
     var showAddCatDialog by remember { mutableStateOf(false) }
     var showAddMethodDialog by remember { mutableStateOf(false) }
+    
+    // Date Picker Logic
+    val calendar = Calendar.getInstance()
+    calendar.timeInMillis = selectedDate
+    
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+            val newCal = Calendar.getInstance()
+            newCal.set(year, month, dayOfMonth)
+            selectedDate = newCal.timeInMillis
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -87,6 +116,26 @@ fun TransactionScreen(viewModel: DashboardViewModel, navController: NavControlle
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Date Picker Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { datePickerDialog.show() }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.DateRange, contentDescription = null, tint = Color.Gray)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                     Text("Fecha", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                     val dateStr = java.text.SimpleDateFormat("EEE, dd MMM yyyy", java.util.Locale.getDefault()).format(Date(selectedDate))
+                     Text(dateStr, fontSize = 16.sp, color = Color(0xFF1E293B))
+                }
+            }
+            
+            Divider(color = Color.LightGray.copy(alpha = 0.3f))
+            Spacer(modifier = Modifier.height(24.dp))
+            
             // Category Selection
             Text("¿En qué categoría?", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(12.dp))
@@ -158,11 +207,32 @@ fun TransactionScreen(viewModel: DashboardViewModel, navController: NavControlle
 
             Button(
                 onClick = {
-                    val amountValue = amount.toDoubleOrNull() ?: 0.0
+                    val amountValue = amount.replace(".","").toDoubleOrNull() ?: 0.0
                     if (amountValue > 0 && selectedCatId != null && selectedMethodId != null) {
-                        viewModel.addTransaction(amountValue, type, selectedCatId!!, selectedMethodId!!, description)
+                        if (isEdit) {
+                            viewModel.updateTransaction(
+                                editData!!.id,
+                                amountValue,
+                                type,
+                                selectedCatId!!,
+                                selectedMethodId!!,
+                                description,
+                                selectedDate
+                            )
+                        } else {
+                            viewModel.addTransaction(
+                                amountValue, 
+                                type, 
+                                selectedCatId!!, 
+                                selectedMethodId!!, 
+                                description, 
+                                selectedDate
+                            )
+                        }
+                        
                         keyboardController?.hide()
-                        Toast.makeText(context, "Transacción registrada con éxito 🚀", Toast.LENGTH_SHORT).show()
+                        val msg = if (isEdit) "Transacción actualizada correctamente" else "Transacción registrada con éxito 🚀"
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                         navController.popBackStack()
                     }
                 },
@@ -174,7 +244,7 @@ fun TransactionScreen(viewModel: DashboardViewModel, navController: NavControlle
             ) {
                 Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(10.dp))
-                Text("Cargar Transacción", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(if (isEdit) "Guardar Cambios" else "Cargar Transacción", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }

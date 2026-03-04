@@ -43,4 +43,23 @@ interface FinanceDao {
 
     @Query("UPDATE fixed_expenses SET isPaidThisMonth = :paid, paidInstallments = :newCount WHERE id = :id")
     suspend fun updateFixedExpenseInstallment(id: Int, paid: Boolean, newCount: Int)
+
+    @Update
+    suspend fun updateTransaction(transaction: Transaction)
+
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    suspend fun deleteTransaction(id: Int)
+
+    @Query("SELECT * FROM transactions")
+    suspend fun getAllTransactionsForReport(): List<Transaction>
+    
+    @Query("DELETE FROM transactions")
+    suspend fun deleteAllTransactions()
+    
+    @Query("DELETE FROM fixed_expenses")
+    suspend fun deleteAllFixedExpenses()
+    
+    @Query("DELETE FROM categories")
+    suspend fun deleteAllCategories()
 }

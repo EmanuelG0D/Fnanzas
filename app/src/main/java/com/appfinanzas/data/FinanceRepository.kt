@@ -67,4 +67,17 @@ class FinanceRepository(private val financeDao: FinanceDao, private val context:
     suspend fun updateFixedExpenseStatus(id: Int, paid: Boolean) = financeDao.updateFixedExpensePaidStatus(id, paid)
     
     suspend fun updateFixedExpenseInstallment(id: Int, paid: Boolean, count: Int) = financeDao.updateFixedExpenseInstallment(id, paid, count)
+
+    suspend fun updateTransaction(transaction: Transaction) = financeDao.updateTransaction(transaction)
+
+    suspend fun deleteTransaction(id: Int) = financeDao.deleteTransaction(id)
+    
+    suspend fun getReportData(): List<Transaction> = financeDao.getAllTransactionsForReport()
+    
+    suspend fun resetAllData() {
+        financeDao.deleteAllTransactions()
+        financeDao.deleteAllFixedExpenses()
+        // No borramos categorías para no romper la app, o las borramos si quieres full clean
+        financeDao.deleteAllCategories()
+    }
 }

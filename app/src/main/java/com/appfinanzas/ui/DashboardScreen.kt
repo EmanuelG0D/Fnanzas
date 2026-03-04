@@ -166,14 +166,22 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
 
             // Sección Últimos Movimientos
             if (state.recentTransactions.isNotEmpty()) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text("Últimos Movimientos", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF1E293B))
+                    
+                    // Botón para limpiar (Solo en el dash, elimina las visibles por conveniencia o limpia todo si quieres)
+                    // Implementaremos eliminar individual mejor
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Solo mostramos las primeras 5 en el dashboard para no saturar
+                // Solo mostramos las primeras 5 en el dashboard
                 state.recentTransactions.take(5).forEach { transaction ->
-                    TransactionItem(transaction)
+                    // Usamos SwipeToDismiss o un botón simple de eliminar
+                    TransactionItem(transaction, onDelete = { viewModel.deleteTransaction(transaction.id) })
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 
@@ -198,7 +206,68 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
 }
 
 @Composable
-fun TransactionItem(transaction: RecentTransaction) {
+fun TransactionItem(transaction: RecentTransaction, onEdit: () -> Unit, onDelete: () -> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Opciones") },
+            text = { Text("¿Qué deseas hacer con este movimiento?") },
+            confirmButton = {
+                // No usamos confirmButton standard para tener layout custom
+            },
+            dismissButton = {
+               Column(
+                   modifier = Modifier.fillMaxWidth(),
+                   horizontalAlignment = Alignment.CenterHorizontally,
+                   verticalArrangement = Arrangement.spacedBy(8.dp)
+               ) {
+                   Button(
+                       onClick = { 
+                           showDialog = false
+                           onEdit() 
+                       },
+                       modifier = Modifier.fillMaxWidth(),
+                       colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                   ) { Text("Editar") }
+                   
+                   OutlinedButton(
+                       onClick = { 
+                           showDialog = false
+                           showDeleteConfirm = true
+                       },
+                       modifier = Modifier.fillMaxWidth(),
+                       colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                   ) { Text("Eliminar") }
+                   
+                   TextButton(onClick = { showDialog = false }) { Text("Cancelar") }
+               }
+            }
+        )
+    }
+    
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("¿Estás seguro?") },
+            text = { Text("Se eliminará este registro permanentemente.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDelete()
+                        showDeleteConfirm = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Eliminar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
     val isExpense = transaction.type == TransactionType.EXPENSE
     val amountColor = if (isExpense) Color(0xFFEF4444) else Color(0xFF10B981)
     val icon = if (isExpense) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward
@@ -208,7 +277,7 @@ fun TransactionItem(transaction: RecentTransaction) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().clickable { showDialog = true } // Click para opciones
     ) {
         Row(
             modifier = Modifier

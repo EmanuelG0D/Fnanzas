@@ -27,10 +27,6 @@ import androidx.navigation.NavController
 import com.appfinanzas.data.FixedExpense
 import com.appfinanzas.data.TransactionType
 
-enum class HistoryType {
-    INCOME, EXPENSE, FIXED
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, type: HistoryType) {
@@ -95,7 +91,7 @@ fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, t
                 } else {
                     LazyColumn(contentPadding = PaddingValues(16.dp)) {
                         items(transactionsList) { t ->
-                            TransactionItem(t)
+                            TransactionItem(t, onDelete = { viewModel.deleteTransaction(t.id) })
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }

@@ -53,9 +53,12 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
         val totalExp = exp.sumOf { it.amount }
         val totalInc = inc.sumOf { it.amount }
         val unpaidFixed = fixed.filter { !it.isPaidThisMonth }.sumOf { it.amount }
+        val paidFixed = fixed.filter { it.isPaidThisMonth }.sumOf { it.amount }
         
         // Sumamos al salario lo extra que haya ingresado
-        val realAvailable = sal + totalInc - totalFixed - totalExp
+        // realAvailable = Lo que realmente tengo en mi bolsillo ahora mismo
+        // = Salario + Ingresos - Gastos variables - Gastos Fijos PAGADOS
+        val realAvailable = sal + totalInc - totalExp - paidFixed
 
         // Mapear transacciones recientes
         val allTransactions = (exp + inc).sortedByDescending { it.date }
@@ -74,7 +77,9 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
                 description = t.description,
                 categoryName = catName,
                 methodName = methodName,
-                type = t.type
+                type = t.type,
+                categoryId = t.categoryId,
+                payMethodId = t.paymentMethodId
             )
         }
 
@@ -139,10 +144,18 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
         repository.addFixedExpense(FixedExpense(name = name, amount = amount, totalInstallments = installments)) 
     }
     
-    fun addTransaction(amount: Double, type: TransactionType, catId: Int, methodId: Int, desc: String) {
+    fun addTransaction(amount: Double, type: TransactionType, catId: Int, methodId: Int, desc: String, date: Long) {
         viewModelScope.launch {
             repository.addTransaction(
-                Transaction(amount = amount, type = type, categoryId = catId, paymentMethodId = methodId, description = desc)
+                Transaction(amount = amount, type = type, categoryId = catId, paymentMethodId = methodId, description = desc, date = date)
+            )
+        }
+    }
+    
+    fun updateTransaction(id: Int, amount: Double, type: TransactionType, catId: Int, methodId: Int, desc: String, date: Long) {
+        viewModelScope.launch {
+            repository.updateTransaction(
+                Transaction(id = id, amount = amount, type = type, categoryId = catId, paymentMethodId = methodId, description = desc, date = date)
             )
         }
     }
@@ -157,6 +170,48 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
 
     suspend fun addCustomMethod(name: String): Int {
         return repository.addPaymentMethod(PaymentMethod(name = name, isCustom = true)).toInt()
+    }
+    
+    fun deleteTransaction(id: Int) = viewModelScope.launch {
+        repository.deleteTransaction(id)
+    }
+    
+    fun deleteAllData() = viewModelScope.launch {
+        repository.resetAllData()
+        repository.saveUserSalary(0.0)
+    }
+    
+    suspend fun generateReport(): String {
+        val txs = repository.getReportData().sortedByDescending { it.date }
+        val sb = StringBuilder()
+        // Header CSV
+        sb.append("Fecha,Tipo,Categoria,Metodo,Monto,Nota\n")
+        
+        // Cache de nombres para no hacer queries locas (aunque aquí ya tenemos los IDs en txs)
+        // Por simplicidad, obtenemos listas actuales. Si se borraron categorias, saldrán vacías/default.
+        val eCats = repository.getCategories(TransactionType.EXPENSE).first()
+        val iCats = repository.getCategories(TransactionType.INCOME).first()
+        val methods = repository.getPaymentMethods().first()
+
+        txs.forEach { t ->
+            val dateStr = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date(t.date))
+            val typeStr = if (t.type == TransactionType.INCOME) "Ingreso" else "Gasto"
+            
+            val catName = if (t.type == TransactionType.EXPENSE) {
+                eCats.find { it.id == t.categoryId }?.name ?: "Sin categoría"
+            } else {
+                iCats.find { it.id == t.categoryId }?.name ?: "Sin categoría"
+            }
+            val methodName = methods.find { it.id == t.paymentMethodId }?.name ?: "Efectivo"
+            
+            // Limpiar comas y saltos de línea para no romper el CSV
+            val cleanDesc = (t.description ?: "").replace(",", " ").replace("\n", " ")
+            val cleanCat = catName.replace(",", " ")
+            val cleanMethod = methodName.replace(",", " ")
+
+            sb.append("$dateStr,$typeStr,$cleanCat,$cleanMethod,${t.amount},$cleanDesc\n")
+        }
+        return sb.toString()
     }
 }
 
@@ -179,5 +234,8 @@ data class RecentTransaction(
     val description: String?,
     val categoryName: String,
     val methodName: String,
-    val type: TransactionType
+    val type: TransactionType,
+    // ID originales para edición
+    val categoryId: Int,
+    val payMethodId: Int
 )
