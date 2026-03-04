@@ -188,10 +188,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                     ) {
                         Text("Ver todo el historial", color = Color.Gray)
                     }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
+                }
+            } else {
+                Text(
         }
     }
 }
