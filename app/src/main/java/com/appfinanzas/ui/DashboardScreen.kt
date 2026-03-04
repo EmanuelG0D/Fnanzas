@@ -19,9 +19,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import java.text.NumberFormat
-import java.util.Locale
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.text.style.TextOverflow
+import com.appfinanzas.data.TransactionType
+import java.text.SimpleDateFormat
+import java.util.Date
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,9 +161,101 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                     Text("Recibir", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Sección Últimos Movimientos
+            if (state.recentTransactions.isNotEmpty()) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Últimos Movimientos", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF1E293B))
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                state.recentTransactions.forEach { transaction ->
+                    TransactionItem(transaction)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            } else {
+                Text(
+                    "Aún no hay movimientos este mes.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+}
+
+@Composable
+fun TransactionItem(transaction: RecentTransaction) {
+    val isExpense = transaction.type == TransactionType.EXPENSE
+    val amountColor = if (isExpense) Color(0xFFEF4444) else Color(0xFF10B981)
+    val icon = if (isExpense) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward
+    val bgColor = if (isExpense) Color(0xFFFEE2E2) else Color(0xFFD1FAE5)
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(bgColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = amountColor)
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = transaction.categoryName,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color(0xFF1E293B)
+                )
+                if (!transaction.description.isNullOrBlank()) {
+                    Text(
+                        text = transaction.description,
+                        fontSize = 13.sp,
+                        color = Color.Gray,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Text(
+                    text = "${formatDate(transaction.date)} • ${transaction.methodName}",
+                    fontSize = 12.sp,
+                    color = Color.LightGray
+                )
+            }
+            
+            Text(
+                text = (if (isExpense) "- " else "+ ") + formatMoney(transaction.amount),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = amountColor
+            )
+        }
+    }
+}
+
+fun formatDate(dateMillis: Long): String {
+    val formatter = SimpleDateFormat("dd MMM", Locale("es", "CO"))
+    return formatter.format(Date(dateMillis))
 }
 
 fun formatMoney(amount: Double): String {

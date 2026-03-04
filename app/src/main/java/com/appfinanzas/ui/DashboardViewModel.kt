@@ -43,7 +43,9 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
     val expenseCats = repository.getCategories(TransactionType.EXPENSE).stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     val incomeCats = repository.getCategories(TransactionType.INCOME).stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val dashboardState = combine(salaryFlow, fixedExpenses, expenses, incomes) { sal, fixed, exp, inc ->
+    val dashboardState = combine(
+        salaryFlow, fixedExpenses, expenses, incomes, expenseCats, incomeCats, paymentMethods
+    ) { sal, fixed, exp, inc, eCats, iCats, methods ->
         val totalFixed = fixed.sumOf { it.amount }
         val totalExp = exp.sumOf { it.amount }
         val totalInc = inc.sumOf { it.amount }
@@ -51,6 +53,27 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
         
         // Sumamos al salario lo extra que haya ingresado
         val realAvailable = sal + totalInc - totalFixed - totalExp
+
+        // Mapear transacciones recientes
+        val allTransactions = (exp + inc).sortedByDescending { it.date }
+        val recentTransactions = allTransactions.map { t ->
+            val catName = if (t.type == TransactionType.EXPENSE) {
+                eCats.find { it.id == t.categoryId }?.name ?: "Sin categoría"
+            } else {
+                iCats.find { it.id == t.categoryId }?.name ?: "Sin categoría"
+            }
+            val methodName = methods.find { it.id == t.paymentMethodId }?.name ?: "Efectivo"
+            
+            RecentTransaction(
+                id = t.id,
+                amount = t.amount,
+                date = t.date,
+                description = t.description,
+                categoryName = catName,
+                methodName = methodName,
+                type = t.type
+            )
+        }
 
         DashboardState(
             salary = sal,
@@ -60,7 +83,8 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
             totalIncomes = totalInc,
             realAvailable = realAvailable,
             showWarning = unpaidFixed > 0 && totalFixed > 0,
-            hasPaidItems = fixed.isNotEmpty() && fixed.all { it.isPaidThisMonth }
+            hasPaidItems = fixed.isNotEmpty() && fixed.all { it.isPaidThisMonth },
+            recentTransactions = recentTransactions
         )
     }.stateIn(viewModelScope, SharingStarted.Lazily, DashboardState())
 
@@ -98,6 +122,17 @@ data class DashboardState(
     val totalExpenses: Double = 0.0,
     val totalIncomes: Double = 0.0,
     val realAvailable: Double = 0.0, 
-    val showWarning: Boolean = false, 
-    val hasPaidItems: Boolean = false
+    val showWarning: Boolean = false,
+    val hasPaidItems: Boolean = false,
+    val recentTransactions: List<RecentTransaction> = emptyList()
+)
+
+data class RecentTransaction(
+    val id: Int,
+    val amount: Double,
+    val date: Long,
+    val description: String?,
+    val categoryName: String,
+    val methodName: String,
+    val type: TransactionType
 )
