@@ -31,6 +31,12 @@ fun ConfigScreen(viewModel: DashboardViewModel, navController: NavController) {
     // Inicializar el input sin decimales
     var salaryInput by remember(state.salary) { mutableStateOf(state.salary.toLong().toString().takeIf { it != "0" } ?: "") }
     var showAddExpenseDialog by remember { mutableStateOf(false) }
+    
+    // Variables para el nuevo gasto
+    var newExpenseName by remember { mutableStateOf("") }
+    var newExpenseAmount by remember { mutableStateOf("") }
+    var isInstallment by remember { mutableStateOf(false) }
+    var installmentsCount by remember { mutableStateOf("") }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -148,6 +154,13 @@ fun ConfigScreen(viewModel: DashboardViewModel, navController: NavController) {
                             Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
                                 Text(expense.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Text(formatMoney(expense.amount), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                                if (expense.totalInstallments > 0) {
+                                    Text(
+                                        "Cuota ${expense.paidInstallments}/${expense.totalInstallments}",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF3B82F6)
+                                    )
+                                }
                             }
                             IconButton(onClick = { 
                                 viewModel.deleteFixedExpense(expense.id)
@@ -165,6 +178,9 @@ fun ConfigScreen(viewModel: DashboardViewModel, navController: NavController) {
     if (showAddExpenseDialog) {
         var expenseName by remember { mutableStateOf("") }
         var expenseAmount by remember { mutableStateOf("") }
+        // Cuotas
+        var isInstallment by remember { mutableStateOf(false) }
+        var installmentsCount by remember { mutableStateOf("") }
 
         AlertDialog(
             onDismissRequest = { showAddExpenseDialog = false },
@@ -189,13 +205,40 @@ fun ConfigScreen(viewModel: DashboardViewModel, navController: NavController) {
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    // Check de cuotas
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().clickable { isInstallment = !isInstallment }
+                    ) {
+                        Checkbox(checked = isInstallment, onCheckedChange = { isInstallment = it })
+                        Text("¿Es una compra a cuotas?")
+                    }
+                    if (isInstallment) {
+                        OutlinedTextField(
+                            value = installmentsCount,
+                            onValueChange = { installmentsCount = it.filter { c -> c.isDigit() } },
+                            label = { Text("Número de cuotas") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "Se borrará automáticamente al completar.", 
+                            fontSize = 12.sp, 
+                            color = Color.Gray
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(onClick = {
                     val amount = expenseAmount.toDoubleOrNull() ?: 0.0
+                    val installments = if (isInstallment) installmentsCount.toIntOrNull() ?: 0 else 0
+                    
                     if (expenseName.isNotBlank() && amount > 0) {
-                        viewModel.addFixedExpense(expenseName, amount)
+                        viewModel.addFixedExpense(expenseName, amount, installments)
                         showAddExpenseDialog = false
                         scope.launch { snackbarHostState.showSnackbar("Gasto fijo agregado", duration = SnackbarDuration.Short) }
                     }

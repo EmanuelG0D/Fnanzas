@@ -34,4 +34,7 @@ interface FinanceDao {
 
     @Query("UPDATE fixed_expenses SET isPaidThisMonth = :paid WHERE id = :id")
     suspend fun updateFixedExpensePaidStatus(id: Int, paid: Boolean)
+
+    @Query("UPDATE fixed_expenses SET isPaidThisMonth = :paid, paidInstallments = :newCount WHERE id = :id")
+    suspend fun updateFixedExpenseInstallment(id: Int, paid: Boolean, newCount: Int)
 }

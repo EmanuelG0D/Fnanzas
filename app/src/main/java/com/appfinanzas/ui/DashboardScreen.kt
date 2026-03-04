@@ -1,6 +1,7 @@
 package com.appfinanzas.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -96,7 +97,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                     icon = Icons.Rounded.TrendingUp,
                     color = Color(0xFF10B981),
                     bgColor = Color(0xFFD1FAE5),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).clickable { navController.navigate("history/INCOME") }
                 )
                 StatBubble(
                     title = "Gastos Extras",
@@ -104,7 +105,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                     icon = Icons.Rounded.ReceiptLong,
                     color = Color(0xFFEF4444),
                     bgColor = Color(0xFFFEE2E2),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).clickable { navController.navigate("history/EXPENSE") }
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -115,7 +116,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                     icon = Icons.Rounded.AccountBalanceWallet,
                     color = Color(0xFF3B82F6),
                     bgColor = Color(0xFFDBEAFE),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).clickable { navController.navigate("history/FIXED") }
                 )
                 StatBubble(
                     title = "Fijos a Pagar",
@@ -123,7 +124,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                     icon = Icons.Rounded.Schedule,
                     color = Color(0xFFF59E0B), // Naranja
                     bgColor = Color(0xFFFEF3C7), // Naranja claro
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).clickable { navController.navigate("history/FIXED") }
                 )
             }
 
@@ -174,16 +175,19 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                state.recentTransactions.forEach { transaction ->
+                // Solo mostramos las primeras 5 en el dashboard para no saturar
+                state.recentTransactions.take(5).forEach { transaction ->
                     TransactionItem(transaction)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
-            } else {
-                Text(
-                    "Aún no hay movimientos este mes.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(16.dp)
+                
+                if (state.recentTransactions.size > 5) {
+                    TextButton(
+                         onClick = { navController.navigate("history/EXPENSE") }, 
+                         modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Ver todo el historial", color = Color.Gray)
+                    }
                 )
             }
             

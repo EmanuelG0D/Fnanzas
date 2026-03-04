@@ -99,7 +99,32 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
     
     fun deleteFixedExpense(id: Int) = viewModelScope.launch { repository.deleteFixedExpense(id) }
     
-    fun toggleFixedExpense(id: Int, paid: Boolean) = viewModelScope.launch { repository.updateFixedExpenseStatus(id, paid) }
+    fun toggleFixedExpense(id: Int, paid: Boolean) = viewModelScope.launch { 
+        val expense = fixedExpenses.value.find { it.id == id } ?: return@launch
+        
+        if (expense.totalInstallments > 0) {
+            // Manejo de cuotas
+            if (paid) {
+                val newCount = expense.paidInstallments + 1
+                if (newCount >= expense.totalInstallments) {
+                    repository.deleteFixedExpense(id)
+                } else {
+                    repository.updateFixedExpenseInstallment(id, true, newCount)
+                }
+            } else {
+                // Deshacer pago (restar cuota solo si es mayor a 0)
+                val newCount = if (expense.paidInstallments > 0) expense.paidInstallments - 1 else 0
+                repository.updateFixedExpenseInstallment(id, false, newCount)
+            }
+        } else {
+            // Gasto normal recurrente
+            repository.updateFixedExpenseStatus(id, paid) 
+        }
+    }
+    
+    fun addFixedExpense(name: String, amount: Double, installments: Int = 0) = viewModelScope.launch { 
+        repository.addFixedExpense(FixedExpense(name = name, amount = amount, totalInstallments = installments)) 
+    }
     
     fun addTransaction(amount: Double, type: TransactionType, catId: Int, methodId: Int, desc: String) {
         viewModelScope.launch {

@@ -27,7 +27,9 @@ data class FixedExpense(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val amount: Double,
-    val isPaidThisMonth: Boolean = false
+    val isPaidThisMonth: Boolean = false,
+    val totalInstallments: Int = 0, // 0 significa indefinido (recurrente)
+    val paidInstallments: Int = 0
 )
 
 @Entity(tableName = "transactions")

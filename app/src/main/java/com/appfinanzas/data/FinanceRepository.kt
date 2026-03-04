@@ -61,4 +61,6 @@ class FinanceRepository(private val financeDao: FinanceDao, private val context:
     suspend fun deleteFixedExpense(id: Int) = financeDao.deleteFixedExpense(id)
     
     suspend fun updateFixedExpenseStatus(id: Int, paid: Boolean) = financeDao.updateFixedExpensePaidStatus(id, paid)
+    
+    suspend fun updateFixedExpenseInstallment(id: Int, paid: Boolean, count: Int) = financeDao.updateFixedExpenseInstallment(id, paid, count)
 }
