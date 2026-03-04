@@ -191,6 +191,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                 }
             } else {
                 Text(
+                    text = "Aún no hay movimientos este mes.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
         }
     }
 }
