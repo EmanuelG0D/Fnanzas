@@ -1,5 +1,7 @@
 package com.appfinanzas.ui
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -60,7 +62,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (state.salary == 0.0) {
+            AnimatedVisibility(
+                visible = state.salary == 0.0,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
@@ -296,19 +302,32 @@ fun MainBalanceCard(amount: Double) {
             )
             
             Column(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 36.dp).fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = "Plata Real Disponible", 
+                modifier = ModifieDisponible", 
                     fontSize = 16.sp, 
                     color = Color.White.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = formatMoney(amount),
-                    fontSize = 40.sp,
+                AnimatedContent(
+                    targetState = amount,
+                    transitionSpec = {
+                        if (targetState > initialState) {
+                            slideInVertically { height -> height } + fadeIn() togetherWith
+                            slideOutVertically { height -> -height } + fadeOut()
+                        } else {
+                            slideInVertically { height -> -height } + fadeIn() togetherWith
+                            slideOutVertically { height -> height } + fadeOut()
+                        }
+                    }
+                ) { targetAmount ->
+                    Text(
+                        text = formatMoney(targetAmount),
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Black,
+                        color = if (targetAmount < 0) Color(0xFFFF5252) else Color.White,
+                        letterSpacing = (-1).sp
+                    )
+                }   fontSize = 40.sp,
                     fontWeight = FontWeight.Black,
                     color = if (amount < 0) Color(0xFFFF5252) else Color.White,
                     letterSpacing = (-1).sp
