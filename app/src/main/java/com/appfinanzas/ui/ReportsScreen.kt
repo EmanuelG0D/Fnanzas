@@ -183,6 +183,9 @@ fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No hay datos registrados.", color = Color.Gray)
+                    }
+                }
+            }
         }
     }
 }
