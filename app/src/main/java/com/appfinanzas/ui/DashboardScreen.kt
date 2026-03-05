@@ -47,21 +47,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
             TopAppBar(
                 title = { Text("Mi Billetera", fontWeight = FontWeight.Bold) },
                 actions = {
-                    val context = LocalContext.current
-                    val scope = rememberCoroutineScope()
-                    IconButton(onClick = { 
-                        scope.launch {
-                            val csvReport = viewModel.generateReport()
-                            val sendIntent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, csvReport)
-                                type = "text/plain" 
-                            }
-                            val shareIntent = Intent.createChooser(sendIntent, "Exportar Reporte")
-                            context.startActivity(shareIntent)
-                        }
-                    }) {
-                        Icon(Icons.Default.Share, contentDescription = "Reporte")
+                    IconButton(onClick = { navController.navigate("reports") }) {
+                        Icon(Icons.Default.Info, contentDescription = "Reportes")
                     }
                     IconButton(onClick = { navController.navigate("config") }) {
                         Icon(Icons.Default.Settings, contentDescription = "Configuración")
