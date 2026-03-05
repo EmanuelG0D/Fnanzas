@@ -31,6 +31,9 @@ fun FinanceAppNavigation(viewModel: DashboardViewModel, openAddExpense: Boolean)
                 composable("reports") { 
                     ReportsScreen(viewModel, navController) 
                 }
+                composable("goals") { 
+                    GoalsScreen(viewModel, navController) 
+                }
                 composable("history/{type}") { backStackEntry ->
                      val typeStr = backStackEntry.arguments?.getString("type") ?: "EXPENSE"
                      val historyType = try {

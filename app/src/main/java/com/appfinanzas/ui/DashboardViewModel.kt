@@ -36,6 +36,7 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
 
     val salaryFlow = repository.getUserSalary().stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
     val fixedExpenses = repository.getFixedExpenses().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val goals = repository.getGoals().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     val expenses = repository.getMonthlyExpenses().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     val incomes = repository.getMonthlyIncomes().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
@@ -176,6 +177,49 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
     
     fun deleteTransaction(id: Int) = viewModelScope.launch {
         repository.deleteTransaction(id)
+    }
+    
+    fun addGoal(name: String, target: Double, date: Long?) = viewModelScope.launch {
+        repository.addGoal(Goal(name = name, targetAmount = target, deadline = date))
+    }
+    
+    fun deleteGoal(goal: Goal) = viewModelScope.launch {
+        repository.deleteGoal(goal)
+    }
+    
+    fun addSavingsToGoal(goal: Goal, amount: Double) = viewModelScope.launch {
+        // 1. Update Goal Amount
+        val updatedGoal = goal.copy(
+            currentAmount = goal.currentAmount + amount,
+            isCompleted = (goal.currentAmount + amount) >= goal.targetAmount
+        )
+        repository.updateGoal(updatedGoal)
+        
+        // 2. Register Expense Transaction to deduct from Balance
+        // Check if "Ahorros" category exists, else create it
+        val cats = repository.getCategories(TransactionType.EXPENSE).first()
+        var savingsCat = cats.find { it.name.equals("Ahorros", ignoreCase = true) }
+        
+        val catId = if (savingsCat != null) {
+            savingsCat.id
+        } else {
+            repository.addCategory(Category(name = "Ahorros", type = TransactionType.EXPENSE, isCustom = true)).toInt()
+        }
+        
+        // Find a payment method (default first one)
+        val methods = repository.getPaymentMethods().first()
+        val methodId = methods.firstOrNull()?.id ?: -1
+        
+        repository.addTransaction(
+            Transaction(
+                amount = amount,
+                type = TransactionType.EXPENSE,
+                categoryId = catId,
+                paymentMethodId = methodId,
+                description = "Abono a meta: ${goal.name}",
+                date = System.currentTimeMillis()
+            )
+        )
     }
     
     fun deleteAllData() = viewModelScope.launch {

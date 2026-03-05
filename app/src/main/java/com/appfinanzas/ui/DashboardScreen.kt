@@ -129,6 +129,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, navController: NavController)
                 unpaid = state.unpaidFixedExpenses,
                 onClick = { navController.navigate("history/FIXED") }
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            GoalsSummaryCard(onClick = { navController.navigate("goals") })
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -490,6 +494,38 @@ fun FixedExpensesCard(total: Double, unpaid: Double, onClick: () -> Unit) {
         }
     }
 }
+
+@Composable
+fun GoalsSummaryCard(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFEDE9FE)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFF8B5CF6))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text("Mis Metas", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Ahorra para tus sueños", fontSize = 12.sp, color = Color.Gray)
+                }
+            }
+            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.Gray)
+        }
+    }
+}
+
 
 @Composable
 fun WarningAlert(salary: Double, fixedExpenses: Double, realAvailable: Double) {

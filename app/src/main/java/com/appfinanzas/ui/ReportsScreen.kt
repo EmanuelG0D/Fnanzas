@@ -27,21 +27,57 @@ import com.appfinanzas.data.TransactionType
 fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
     val state by viewModel.dashboardState.collectAsState()
     
-    // Process data for Chart
+    // Tab state: 0 = Expenses, 1 = Income
+    var selectedTab by remember { mutableStateOf(0) }
+    
+    // --- Data Processing for Expenses ---
     val variableExpenses = state.recentTransactions.filter { it.type == TransactionType.EXPENSE }
     val paidFixedExpenses = state.totalFixedExpenses - state.unpaidFixedExpenses
     
-    // Combine variable categories with fixed expenses item
-    val variableCategories = variableExpenses.groupBy { it.categoryName }
+    val expenseCategories = variableExpenses.groupBy { it.categoryName }
         .mapValues { entry -> entry.value.sumOf { it.amount } }
         .toMutableMap()
         
     if (paidFixedExpenses > 0) {
-        variableCategories["Gastos Fijos"] = paidFixedExpenses
+        expenseCategories["Gastos Fijos"] = paidFixedExpenses
     }
     
-    val categoryTotals = variableCategories.toList().sortedByDescending { it.second }
-    val totalExpensesForChart = categoryTotals.sumOf { it.second }
+    val expenseChartData = expenseCategories.toList().sortedByDescending { it.second }
+    val totalExpensesForChart = expenseChartData.sumOf { it.second }
+
+    // --- Data Processing for Income ---
+    val incomeTransactions = state.recentTransactions.filter { it.type == TransactionType.INCOME }
+    // Add salary as a category, or transaction if it's logged there.
+    // DashboardState totalIncomes usually sums up income transactions + salary? Wait.
+    // Let's check DashboardViewModel.
+    // realAvailable = sal + totalInc - totalExp - paidFixed
+    // So Salary is separate. We should include Salary in Income Chart if relevant.
+    // Usually users want to see "Salario" vs "Otros Ingresos".
+    
+    val incomeCategories = incomeTransactions.groupBy { it.categoryName }
+        .mapValues { entry -> entry.value.sumOf { it.amount } }
+        .toMutableMap()
+        
+    if (state.salary > 0) {
+        // If salary is not 0, we treat it as an Income Source
+        // But do we double count if they added a transaction for Salary?
+        // The app design seems to separate "Config Salary" from "Income Transactions".
+        val currentSalary = incomeCategories["Salario"] ?: 0.0
+        // If they haven't explicitly logged salary as a transaction, 
+        // we might just show the base salary from extended config? 
+        // For simplicity, let's stick to transactions + base salary if meaningful.
+        // Actually, let's include base salary as "Salario Base" entry.
+        incomeCategories["Salario Base"] = state.salary
+    }
+
+    val incomeChartData = incomeCategories.toList().sortedByDescending { it.second }
+    val totalIncomeForChart = incomeChartData.sumOf { it.second }
+
+
+    // Current Chart Data based on Tab
+    val currentChartData = if (selectedTab == 0) expenseChartData else incomeChartData
+    val currentTotal = if (selectedTab == 0) totalExpensesForChart else totalIncomeForChart
+    val chartTitle = if (selectedTab == 0) "Distribución de Gastos" else "Fuentes de Ingreso"
 
     // Colors for chart
     val colors = listOf(
@@ -67,78 +103,86 @@ fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
                 .fillMaxSize()
                 .padding(padding)
                 .background(Color(0xFFF8F9FA))
-                .padding(16.dp)
         ) {
-            // Summary Cards Row
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryCard("Ingresos", state.totalIncomes, Color(0xFF10B981), Modifier.weight(1f))
-                SummaryCard("Gastos Totales", totalExpensesForChart, Color(0xFFEF4444), Modifier.weight(1f))
+            // Tabs
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = Color.White,
+                contentColor = MaterialTheme.colorScheme.primary
+            ) {
+                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Gastos") })
+                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Ingresos") })
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text("Distribución de Gastos", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            if (totalExpensesForChart > 0) {
-                // Pie Chart Container
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-                    Canvas(modifier = Modifier.size(220.dp).padding(20.dp)) {
-                        var startAngle = -90f
-                        val strokeWidth = 50f
-                        
-                        categoryTotals.forEachIndexed { index, (cat, amount) ->
-                            val sweepAngle = (amount / totalExpensesForChart * 360).toFloat()
-                            val color = colors[index % colors.size]
+
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Summary Cards Row
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SummaryCard("Total Ingresos", totalIncomeForChart, Color(0xFF10B981), Modifier.weight(1f))
+                    SummaryCard("Total Gastos", totalExpensesForChart, Color(0xFFEF4444), Modifier.weight(1f))
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Text(chartTitle, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                if (currentTotal > 0) {
+                    // Pie Chart Container
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                        Canvas(modifier = Modifier.size(220.dp).padding(20.dp)) {
+                            var startAngle = -90f
+                            val strokeWidth = 50f
                             
-                            drawArc(
-                                color = color,
-                                startAngle = startAngle,
-                                sweepAngle = sweepAngle,
-                                useCenter = false,
-                                style = Stroke(width = strokeWidth)
-                            )
-                            startAngle += sweepAngle
+                            currentChartData.forEachIndexed { index, (cat, amount) ->
+                                val sweepAngle = (amount / currentTotal * 360).toFloat()
+                                val color = colors[index % colors.size]
+                                
+                                drawArc(
+                                    color = color,
+                                    startAngle = startAngle,
+                                    sweepAngle = sweepAngle,
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth)
+                                )
+                                startAngle += sweepAngle
+                            }
+                        }
+                        Text(
+                            text = formatMoney(currentTotal),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Legend List
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(currentChartData) { (cat, amount) ->
+                            val index = currentChartData.indexOfFirst { it.first == cat }
+                            val color = colors[index % colors.size]
+                            val percentage = (amount / currentTotal * 100).toInt()
+                            
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(modifier = Modifier.size(12.dp).clip(CircleShape).background(color))
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(cat, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium, color = Color(0xFF1E293B))
+                                Text("$percentage%", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(formatMoney(amount), fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                            }
+                            Divider(color = Color.LightGray.copy(alpha = 0.2f))
                         }
                     }
-                    Text(
-                        text = formatMoney(totalExpensesForChart),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                // Legend List
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(categoryTotals) { (cat, amount) ->
-                        val index = categoryTotals.indexOfFirst { it.first == cat }
-                        val color = colors[index % colors.size]
-                        val percentage = (amount / totalExpensesForChart * 100).toInt()
-                        
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(modifier = Modifier.size(12.dp).clip(CircleShape).background(color))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(cat, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium, color = Color(0xFF1E293B))
-                            Text("$percentage%", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(formatMoney(amount), fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-                        }
-                        Divider(color = Color.LightGray.copy(alpha = 0.2f))
-                    }
-                }
-            } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No hay gastos registrados para mostrar.", color = Color.Gray)
-                }
-            }
+                } else {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No hay datos registrados.", color = Color.Gray)
         }
     }
 }

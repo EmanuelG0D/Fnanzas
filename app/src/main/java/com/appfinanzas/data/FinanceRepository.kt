@@ -79,7 +79,16 @@ class FinanceRepository(private val financeDao: FinanceDao, private val context:
     suspend fun resetAllData() {
         financeDao.deleteAllTransactions()
         financeDao.deleteAllFixedExpenses()
+        financeDao.deleteAllGoals()
         // No borramos categorías para no romper la app, o las borramos si quieres full clean
         financeDao.deleteAllCategories()
     }
+    
+    fun getGoals() = financeDao.getGoals()
+    
+    suspend fun addGoal(goal: Goal) = financeDao.insertGoal(goal)
+    
+    suspend fun updateGoal(goal: Goal) = financeDao.updateGoal(goal)
+    
+    suspend fun deleteGoal(goal: Goal) = financeDao.deleteGoal(goal)
 }

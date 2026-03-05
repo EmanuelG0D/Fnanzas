@@ -60,6 +60,18 @@ interface FinanceDao {
     @Query("DELETE FROM fixed_expenses")
     suspend fun deleteAllFixedExpenses()
     
-    @Query("DELETE FROM categories")
-    suspend fun deleteAllCategories()
+    @Query("SELECT * FROM goals")
+    fun getGoals(): Flow<List<Goal>>
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGoal(goal: Goal)
+    
+    @Update
+    suspend fun updateGoal(goal: Goal)
+    
+    @Delete
+    suspend fun deleteGoal(goal: Goal)
+    
+    @Query("DELETE FROM goals")
+    suspend fun deleteAllGoals()
 }
