@@ -134,7 +134,9 @@ class DashboardViewModel(private val repository: FinanceRepository) : ViewModel(
     
     fun resetMonthlyPayments() = viewModelScope.launch {
         // Marca todos los gastos FIJOS como NO pagados para iniciar mes
-        // (Nota: No afecta el conteo de cuotas, solo el check del mes actual)
+        // Y borra las transacciones variables para empezar de cero
+        repository.deleteAllTransactions()
+        
         fixedExpenses.value.forEach { 
              repository.updateFixedExpenseStatus(it.id, false)
         }

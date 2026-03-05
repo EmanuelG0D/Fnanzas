@@ -73,6 +73,8 @@ class FinanceRepository(private val financeDao: FinanceDao, private val context:
     suspend fun deleteTransaction(id: Int) = financeDao.deleteTransaction(id)
     
     suspend fun getReportData(): List<Transaction> = financeDao.getAllTransactionsForReport()
+
+    suspend fun deleteAllTransactions() = financeDao.deleteAllTransactions()
     
     suspend fun resetAllData() {
         financeDao.deleteAllTransactions()
