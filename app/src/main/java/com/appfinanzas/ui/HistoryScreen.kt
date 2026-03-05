@@ -10,6 +10,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -26,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.appfinanzas.data.FixedExpense
 import com.appfinanzas.data.TransactionType
-
 import java.net.URLEncoder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,6 +36,10 @@ import java.net.URLEncoder
 fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, type: HistoryType) {
     val state by viewModel.dashboardState.collectAsState()
     val fixedExpenses by viewModel.fixedExpenses.collectAsState()
+    
+    // Search State
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearchActive by remember { mutableStateOf(false) }
 
     val title = when (type) {
         HistoryType.INCOME -> "Mis Ingresos"
@@ -48,24 +54,81 @@ fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, t
     }
 
     // Filtrar transacciones para Income/Expense
-    val transactionsList = if (type != HistoryType.FIXED) {
+    val rawList = if (type != HistoryType.FIXED) {
         state.recentTransactions.filter { 
             if (type == HistoryType.INCOME) it.type == TransactionType.INCOME 
             else it.type == TransactionType.EXPENSE
         }
     } else emptyList()
+    
+    // Apply Search Filter
+    val transactionsList = if (searchQuery.isBlank()) rawList else {
+        rawList.filter { 
+            (it.description?.contains(searchQuery, ignoreCase = true) == true) || 
+            (it.categoryName.contains(searchQuery, ignoreCase = true)) ||
+            (it.methodName.contains(searchQuery, ignoreCase = true))
+        }
+    }
+    
+    val filteredFixedExpenses = if (searchQuery.isBlank()) fixedExpenses else {
+        fixedExpenses.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(title, color = Color.White, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = color)
-            )
+            if (isSearchActive) {
+                TopAppBar(
+                    title = { 
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Buscar...", color = Color.White.copy(alpha = 0.7f)) },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                cursorColor = Color.White,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { 
+                            isSearchActive = false
+                            searchQuery = ""
+                        }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Cerrar búsqueda", tint = Color.White)
+                        }
+                    },
+                    actions = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = Color.White)
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = color)
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(title, color = Color.White, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Atrás", tint = Color.White)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { isSearchActive = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = color)
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -76,11 +139,11 @@ fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, t
         ) {
             if (type == HistoryType.FIXED) {
                 // Lista de Gastos Fijos (diferente UI porque se pueden marcar/desmarcar)
-                if (fixedExpenses.isEmpty()) {
-                    EmptyState("No tienes gastos fijos registrados.")
+                if (filteredFixedExpenses.isEmpty()) {
+                    EmptyState(if(searchQuery.isBlank()) "No tienes gastos fijos registrados." else "No se encontraron resultados.")
                 } else {
                     LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                        items(fixedExpenses) { expense ->
+                        items(filteredFixedExpenses) { expense ->
                             FixedExpenseItem(expense, viewModel)
                             Spacer(modifier = Modifier.height(12.dp))
                         }
@@ -89,7 +152,7 @@ fun HistoryScreen(viewModel: DashboardViewModel, navController: NavController, t
             } else {
                 // Lista de Transacciones (Ingresos o Gastos)
                 if (transactionsList.isEmpty()) {
-                    EmptyState("No hay movimientos registrados.")
+                    EmptyState(if(searchQuery.isBlank()) "No hay movimientos registrados." else "No se encontraron resultados.")
                 } else {
                     LazyColumn(contentPadding = PaddingValues(16.dp)) {
                         items(transactionsList) { t ->
