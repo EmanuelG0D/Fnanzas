@@ -28,13 +28,20 @@ fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
     val state by viewModel.dashboardState.collectAsState()
     
     // Process data for Chart
-    val expenses = state.recentTransactions.filter { it.type == TransactionType.EXPENSE }
-    val totalExpenses = expenses.sumOf { it.amount }
+    val variableExpenses = state.recentTransactions.filter { it.type == TransactionType.EXPENSE }
+    val paidFixedExpenses = state.totalFixedExpenses - state.unpaidFixedExpenses
     
-    val categoryTotals = expenses.groupBy { it.categoryName }
+    // Combine variable categories with fixed expenses item
+    val variableCategories = variableExpenses.groupBy { it.categoryName }
         .mapValues { entry -> entry.value.sumOf { it.amount } }
-        .toList()
-        .sortedByDescending { it.second }
+        .toMutableMap()
+        
+    if (paidFixedExpenses > 0) {
+        variableCategories["Gastos Fijos"] = paidFixedExpenses
+    }
+    
+    val categoryTotals = variableCategories.toList().sortedByDescending { it.second }
+    val totalExpensesForChart = categoryTotals.sumOf { it.second }
 
     // Colors for chart
     val colors = listOf(
@@ -65,7 +72,7 @@ fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
             // Summary Cards Row
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SummaryCard("Ingresos", state.totalIncomes, Color(0xFF10B981), Modifier.weight(1f))
-                SummaryCard("Gastos Totales", state.totalExpenses, Color(0xFFEF4444), Modifier.weight(1f))
+                SummaryCard("Gastos Totales", totalExpensesForChart, Color(0xFFEF4444), Modifier.weight(1f))
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -73,7 +80,7 @@ fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
             Text("Distribución de Gastos", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
             Spacer(modifier = Modifier.height(24.dp))
             
-            if (totalExpenses > 0) {
+            if (totalExpensesForChart > 0) {
                 // Pie Chart Container
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
                     Canvas(modifier = Modifier.size(220.dp).padding(20.dp)) {
@@ -81,7 +88,7 @@ fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
                         val strokeWidth = 50f
                         
                         categoryTotals.forEachIndexed { index, (cat, amount) ->
-                            val sweepAngle = (amount / totalExpenses * 360).toFloat()
+                            val sweepAngle = (amount / totalExpensesForChart * 360).toFloat()
                             val color = colors[index % colors.size]
                             
                             drawArc(
@@ -95,7 +102,7 @@ fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
                         }
                     }
                     Text(
-                        text = formatMoney(totalExpenses),
+                        text = formatMoney(totalExpensesForChart),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = Color.Gray
@@ -109,7 +116,7 @@ fun ReportsScreen(viewModel: DashboardViewModel, navController: NavController) {
                     items(categoryTotals) { (cat, amount) ->
                         val index = categoryTotals.indexOfFirst { it.first == cat }
                         val color = colors[index % colors.size]
-                        val percentage = (amount / totalExpenses * 100).toInt()
+                        val percentage = (amount / totalExpensesForChart * 100).toInt()
                         
                         Row(
                             modifier = Modifier
